@@ -1,5 +1,5 @@
 # IGNITE
-IGNITE: Individualized GeNeration of Imputations in Time-series Electronic health record
+IGNITE: Individualized GeNeration of Imputations in Time-series Electronic health records
 
 Table of contents
 =================
