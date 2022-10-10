@@ -1,4 +1,5 @@
 import tensorflow.compat.v1 as tf
+#update
 tf.disable_v2_behavior()
 import warnings
 warnings.filterwarnings("ignore")
@@ -110,7 +111,7 @@ class observed_only_vae(object):
         cell = tf.compat.v1.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=self.keep_prob)
         cell_units.append(cell)
 
-        cell_enc = tf.keras.layers.StackedRNNCells(cell_units)
+        cell_enc = tf.compat.v1.nn.rnn_cell.MultiRNNCell(cell_units)
         return cell_enc
 
     def buildDecoder(self):
@@ -125,7 +126,7 @@ class observed_only_vae(object):
             cell = tf.compat.v1.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=self.keep_prob)
             cell_units.append(cell)
 
-        cell_dec = tf.keras.layers.StackedRNNCells(cell_units)
+        cell_dec = tf.compat.v1.nn.rnn_cell.MultiRNNCell(cell_units)
         return cell_dec
 
     def buildSampling(self):
@@ -258,7 +259,7 @@ class IMM_vae(object):
         cell = tf.compat.v1.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=self.keep_prob)
         cell_units.append(cell)
 
-        cell_enc = tf.keras.layers.StackedRNNCells(cell_units)
+        cell_enc = tf.compat.v1.nn.rnn_cell.MultiRNNCell(cell_units)
         return cell_enc
 
     def buildDecoder(self):
@@ -273,9 +274,10 @@ class IMM_vae(object):
             cell = tf.compat.v1.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=self.keep_prob)
             cell_units.append(cell)
 
-        cell_dec = tf.keras.layers.StackedRNNCells(cell_units)
+        cell_dec = tf.compat.v1.nn.rnn_cell.MultiRNNCell(cell_units)
 
         return cell_dec
+
 
     def buildSampling(self):
         w_mu = self.weight_variable([self.enc_size, self.z_dim], scope_name='Sampling_layer/Shared_VAE', name='w_mu')
@@ -307,7 +309,7 @@ class IMM_vae(object):
                cell = tf.nn.rnn_cell.LSTMCell(self.batch_size, reuse=tf.AUTO_REUSE)
                cell =  tf.compat.v1.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=self.keep_prob)
                cell_units.append(cell)
-           d_rnn_network  = tf.keras.layers.StackedRNNCells(cell_units)
+           d_rnn_network  = tf.compat.v1.nn.rnn_cell.MultiRNNCell(cell_units)
            initial_state = rnn_init_state(init_="variable", batch_size=self.batch_size,
                                           num_layers=self.enc_layers, num_units=self.batch_size)
            inputs = tf.unstack(input_discriminator, axis=1)
