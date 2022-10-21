@@ -4,7 +4,6 @@ Created on Fri Aug 26 17:25:30 2022
 
 @author: gghos
 """
-
 import tensorflow.compat.v1 as tf
 tf.compat.v1.disable_v2_behavior()
 
@@ -13,11 +12,11 @@ import os
 from Contrastivelosslayer import nt_xent_loss
 from utils import ones_target, zeros_target
 import numpy as np
-import seaborn as sns 
 import pandas as pd
 import matplotlib.pyplot as plt
 import random
 import math
+import seaborn as sns
 
 class IGNITE(object):
     def __init__(self, sess,
@@ -61,7 +60,7 @@ class IGNITE(object):
         # params for interventions information
         self.num_labels = num_labels
         self.conditional = conditional
-        self.name = "logs/last/"+self.experiment_name
+        self.name = "logs/new/"+self.experiment_name
 
 
     def build(self):
@@ -102,6 +101,43 @@ class IGNITE(object):
         saver_images = tf.train.Saver([embedding_var])
         saver_images.save(self.sess, os.path.join(saving_dir, 'embeddings.ckpt'))
 
+    def compare_plot(self,real_data, observed_only_decoded,IMM_decoded, epoch):
+    
+        fig, axes = plt.subplots(1, 19, figsize=(250, 10)) 
+
+        # Set the ticks and ticklabels for all axes
+        plt.setp(axes, xticks= np.arange(49, step = 1))
+        num_plot = 1
+    
+        """continuous dim"""
+        c_dim_list = []
+        c_dim_list += list(range(real_data.shape[2]))
+        
+        c_pid_index = random.sample(list(range(real_data.shape[0])), num_plot)  # same index
+      
+        cols = ['ALP', 'ALT', 'AST', 'Albumin', 'BUN', 'Bilirubin', 'Cholesterol', 'Creatinine', 'DiasABP', 'FiO2', 'GCS', 'Glucose', 'HCO3', 'HCT', 'HR', 'K', 'Lactate', 'MAP', 'TroponinT']
+        # cols2= [ 'Mg', 'NIDiasABP', 'NIMAP', 'NISysABP', 'Na', 'PaCO2', 'Platelets', 'RespRate', 'SaO2', 'SysABP', 'Temp', 'TroponinI', 'TroponinT', 'Urine', 'WBC', 'Weight', 'pH]
+
+       
+        for i, b in zip(range(len(c_dim_list)), cols):
+            df = pd.DataFrame(real_data[c_pid_index, :, c_dim_list[i]])
+            df2 = pd.DataFrame(observed_only_decoded[c_pid_index, :, c_dim_list[i]])
+            df3 = pd.DataFrame(IMM_decoded[c_pid_index, :, c_dim_list[i]])
+            # df4 = pd.DataFrame(d_real_data[c_pid_index, :, c_dim_list[i]])
+            # df5 = pd.DataFrame(c_real_data[c_pid_index, :, c_dim_list[i]])
+            
+            axes[i].set_title(b)
+            axes[i].plot(df.T, 'o-', color='black', label=i)
+            axes[i].plot(df2.T,'o-',color='purple', label=i,alpha=0.5) 
+            axes[i].plot(df3.T,'o-', color='green', label=i,alpha=0.5)
+                # axes[i].plot(df4.T,'o-', color='blue', label=i, alpha=0.2)
+                # axes[i].plot(df5.T, 'o-', color='blue', label=i, alpha=0.3)
+            axes[i].legend(["Original",'Observed_Only',"IGNITE"])
+
+        if not os.path.exists('plots/'+self.experiment_name):
+            os.makedirs('plots/'+self.experiment_name)
+        fig.savefig(os.path.join('plots/'+self.experiment_name+"/"+str(epoch))+".png", format='png')
+        plt.close(fig)
         
     def build_tf_graph(self):
      
@@ -157,10 +193,10 @@ class IGNITE(object):
         # (1) VAE loss  #
         #################
         alpha_re = 1
-        alpha_kl = 0.75
+        alpha_kl = 0.5
         alpha_mt = 0.001
         alpha_ct =0.001
-        alpha_discrim = 1
+        alpha_discrim = 0.5
 
         x_latent_1 = tf.stack(self.c_enc_z, axis=1)
         x_latent_2 = tf.stack(self.d_enc_z, axis=1)
@@ -237,7 +273,6 @@ class IGNITE(object):
 
 
     def build_summary(self):
-        print("finalize")
         self.observed_only_vae_summary = []
         self.observed_only_vae_summary.append(tf.summary.scalar("observed_only_loss/reconstruction_loss", self.observed_only_re_loss))
         self.observed_only_vae_summary.append(tf.summary.scalar("observed_only_loss/kl_divergence_loss", self.observed_only_kl_loss))
@@ -277,14 +312,14 @@ class IGNITE(object):
         print('start training')
         global_id = 0
 
-        for pre in range(self.num_pre_epochs):
+        for epoch in range(self.num_pre_epochs):
             observed_only_x_random = observed_only_x
             IMM_x_random = IMM_x
             binary_mask_x_random = binary_mask_x
             if self.conditional:
                 label_data_random = label_data
          
-            print("VAE epoch %d" % pre)
+            print("VAE epoch %d" % epoch)
 
             observed_only_real_data_lst = []
             observed_only_rec_data_lst = []
@@ -322,6 +357,14 @@ class IGNITE(object):
                 assert not np.any(np.isnan(IMM_rec_data))
 
                 global_id += 1
+                
+                
+                if (epoch%5 == 0):
+                    array = d_binary_mask
+                    array[array == 0] = np.nan
+                    masked_plot=(observed_only_real_data*array)
+                    self.compare_plot(masked_plot, observed_only_rec_data,IMM_rec_data, epoch)
+            
            
             print(len(IMM_rec_data_lst))      
         np.savez('data/'+self.experiment_name+'.npz', observed_only_real=np.vstack(observed_only_real_data_lst), observed_only_rec=np.vstack(observed_only_rec_data_lst),
