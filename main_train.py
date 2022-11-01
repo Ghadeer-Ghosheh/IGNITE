@@ -143,8 +143,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--IGNITE_lr', type=float, default=0.001)
 
-    parser.add_argument('--alpha_re', type=float, default=1)
-    parser.add_argument('--alpha_kl', type=float, default=1)
+    parser.add_argument('--alpha_re', type=float, default=2)
+    parser.add_argument('--alpha_kl', type=float, default=1.5)
     parser.add_argument('--alpha_mt', type=float, default=0.005)
     parser.add_argument('--alpha_ct', type=float, default=0.0005)
     parser.add_argument('--alpha_discrim', type=float, default=0.25)
