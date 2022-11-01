@@ -1,4 +1,6 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.compat.v1.disable_v2_behavior()
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 def recurrent_unit_bilateral(input_dim, hidden_dim, scope_name, i):
     """ Define the recurrent cell in the LSTM. """

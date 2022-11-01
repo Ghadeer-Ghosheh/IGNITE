@@ -1,6 +1,8 @@
 import tensorflow.compat.v1 as tf
 tf.compat.v1.disable_v2_behavior()
 
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
 def nt_xent_loss(out, out_aug, batch_size, hidden_norm=False, temperature=1.0):
     """
     https://github.com/google-research/simclr/blob/master/objective.py
@@ -23,8 +25,8 @@ def nt_xent_loss(out, out_aug, batch_size, hidden_norm=False, temperature=1.0):
     logits_ab = tf.matmul(out, out_aug, transpose_b=True) / temperature
     logits_ba = tf.matmul(out_aug, out, transpose_b=True) / temperature
 
-    loss_a = tf.compat.v1.losses.softmax_cross_entropy(labels, tf.concat([logits_ab, logits_aa], 1))
-    loss_b = tf.compat.v1.losses.softmax_cross_entropy(labels, tf.concat([logits_ba, logits_bb], 1))
+    loss_a = tf.losses.softmax_cross_entropy(labels, tf.concat([logits_ab, logits_aa], 1))
+    loss_b = tf.losses.softmax_cross_entropy(labels, tf.concat([logits_ba, logits_bb], 1))
     loss = loss_a + loss_b
     
     return loss

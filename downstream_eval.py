@@ -30,7 +30,7 @@ def get_results(baseline_names, list_baselines, outcome):
   for name,baseline in zip(baseline_names,list_baselines):
     imputed = baseline.reshape(-1,baseline.shape[1] * baseline.shape[2])
     label = outcome[:imputed.shape[0]]
-    data = np.nan_to_num(imputed)
+    imputed = np.nan_to_num(imputed)
     print("Number of Included Samples",len(imputed))
     print("Number of Positive Samples",label.sum())
     X_train, X_test, y_train, y_test = train_test_split(imputed, label, test_size=0.2, random_state=42)
@@ -43,7 +43,24 @@ def get_results(baseline_names, list_baselines, outcome):
         auc.append(roc_auc_score(y_test.reshape(-1,), pred[:, 1].reshape(-1, )))
         auprc.append(average_precision_score(y_test.reshape(-1,), pred[:, 1].reshape(-1, )))
     print("Average AUC", round(np.mean(auc),3), "Average AUPRC",round(np.mean(auprc),3))
-    
+def get_results_2(baseline_names, list_baselines, outcome):
+  for name,baseline in zip(baseline_names,list_baselines):
+    imputed = baseline.reshape(-1,baseline.shape[1] * baseline.shape[2])
+    label = outcome[:imputed.shape[0]]
+    imputed = np.nan_to_num(imputed)
+    #print("Number of Included Samples",len(imputed))
+    #print("Number of Positive Samples",label.sum())
+    X_train, X_test, y_train, y_test = train_test_split(imputed, label, test_size=0.2, random_state=42)
+    auc = []
+    auprc = []
+    for i in range(1):
+        model = SVC(probability= True).fit(X_train,y_train)
+        pred = model.predict_proba(X_test)
+        auc.append(roc_auc_score(y_test.reshape(-1,), pred[:, 1].reshape(-1, )))
+        auprc.append(average_precision_score(y_test.reshape(-1,), pred[:, 1].reshape(-1, )))
+    #print("Average AUC", round(np.mean(auc),3), "Average AUPRC",round(np.mean(auprc),3))
+    return(round(np.mean(auc),3), round(np.mean(auprc),3))
+
     
 def get_result_sample_missingess(baseline_names, list_baselines,outcome, mask_, min_SM_percent, max_SM_percent):
       for name,baseline in zip(baseline_names,list_baselines):
@@ -65,8 +82,6 @@ def get_result_sample_missingess(baseline_names, list_baselines,outcome, mask_, 
             auc.append(roc_auc_score(y_test.reshape(-1,), pred[:, 1].reshape(-1, )))
             auprc.append(average_precision_score(y_test.reshape(-1,), pred[:, 1].reshape(-1, )))
         print("Average AUC", round(np.mean(auc),3), "Average AUPRC", round(np.mean(auprc),3))        
-        
-       
         
 def get_result_feature_missingess(baseline_names, list_baselines,outcome, mask_, min_feat_miss_percent, max_feat_miss_percent):
     for name,baseline in zip(baseline_names,list_baselines):

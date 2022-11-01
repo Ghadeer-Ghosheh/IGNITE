@@ -16,13 +16,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import random
 import math
-import seaborn as sns
+#import wandb
+from downstream_eval import *
+
 
 class IGNITE(object):
     def __init__(self, sess,
                  # -- shared params:
                  batch_size, time_steps,
-                 num_pre_epochs, 
+                 num_epochs, 
                  checkpoint_dir,
                  # -- params for observed-only-vae
                  oo_vae_dim, 
@@ -32,6 +34,10 @@ class IGNITE(object):
                  # -- params for imm-vae
                  imm_vae_dim, IMM_data_sample,
                  IMM_vae, 
+                 outcomes,
+                 alpha_re, alpha_kl, alpha_mt, 
+                alpha_ct, alpha_discrim,
+                IGNITE_lr,
                  binary_mask_data_sample,experiment_name,
                  conditional=False, num_labels=0,
                  interventions=None):
@@ -39,7 +45,7 @@ class IGNITE(object):
         self.sess = sess
         self.batch_size = batch_size
         self.time_steps = time_steps
-        self.num_pre_epochs = num_pre_epochs
+        self.num_epochs = num_epochs
         self.checkpoint_dir = checkpoint_dir
         self.interventions = interventions
         self.experiment_name = experiment_name
@@ -60,9 +66,18 @@ class IGNITE(object):
         # params for interventions information
         self.num_labels = num_labels
         self.conditional = conditional
-        self.name = "logs/new/"+self.experiment_name
+        self.name = "logs/neww/"+self.experiment_name
 
 
+        self.alpha_re = alpha_re
+        self.alpha_kl = alpha_kl
+        self.alpha_mt = alpha_mt
+        self.alpha_ct = alpha_ct
+        self.alpha_discrim = alpha_discrim
+        self.IGNITE_lr = IGNITE_lr
+
+
+        self.outcomes = outcomes
     def build(self):
         self.build_tf_graph()
         self.build_loss()
@@ -161,6 +176,9 @@ class IGNITE(object):
 
         self.IMM_real_data_pl = tf.placeholder(
             dtype=float, shape=[self.batch_size, self.time_steps, self.imm_vae_dim], name="real_personalized")
+    
+        self.outcome_pl = tf.placeholder(
+         dtype=bool, shape=[self.batch_size], name="outcomes")
         if self.conditional:
             self.IMM_decoded_output, self.IMM_vae_sigma, self.IMM_vae_mu, self.IMM_vae_logsigma, self.d_enc_z = \
                 self.IMM_vae_net.build_vae(self.IMM_real_data_pl, self.real_data_label_pl)
@@ -169,7 +187,7 @@ class IGNITE(object):
                 self.IMM_vae_net.build_vae(self.IMM_real_data_pl)
                 
                 
-
+        
         
         m_binary_mask = tf.cast(self.observed_only_real_data_binary_mask_pl, tf.bool) #observed values
         binary_masked_observed_only_decoded_output_observed = tf.where(m_binary_mask, self.IMM_decoded_output, tf.zeros_like(self.IMM_decoded_output))  
@@ -192,12 +210,13 @@ class IGNITE(object):
         #################
         # (1) VAE loss  #
         #################
+        '''
         alpha_re = 1
-        alpha_kl = 0.5
-        alpha_mt = 0.001
-        alpha_ct =0.001
+        alpha_kl = 0.1
+        alpha_mt = 0.01
+        alpha_ct =0.0001
         alpha_discrim = 0.5
-
+        '''
         x_latent_1 = tf.stack(self.c_enc_z, axis=1)
         x_latent_2 = tf.stack(self.d_enc_z, axis=1)
         self.vae_matching_loss = tf.losses.mean_squared_error(x_latent_1, x_latent_2)
@@ -219,21 +238,16 @@ class IGNITE(object):
                 tf.square(self.observed_only_vae_mu[t]), 1) - tf.reduce_sum(self.observed_only_vae_logsigma[t] + 1, 1))
         
         self.observed_only_kl_loss = tf.reduce_mean(tf.add_n(observed_only_kl_loss))
-        if self.conditional:
-            self.observed_only_vae_loss = alpha_re*self.observed_only_re_loss + \
-                            alpha_kl*self.observed_only_kl_loss
-                  
-        else:
-            self.observed_only_vae_loss = alpha_re*self.observed_only_re_loss + \
-                            alpha_kl*self.observed_only_kl_loss 
-                          
+
+        self.observed_only_vae_loss = self.alpha_re*self.observed_only_re_loss + \
+                            self.alpha_kl*self.observed_only_kl_loss
         
-        self.IMM_re_loss = alpha_re* tf.losses.mean_squared_error(self.IMM_real_data_pl, self.IMM_decoded_output)
+        self.IMM_re_loss = tf.losses.mean_squared_error(self.IMM_real_data_pl, self.IMM_decoded_output)
         IMM_kl_loss = [0] * self.time_steps
         for t in range(self.time_steps):
             IMM_kl_loss[t] = 0.5 * (tf.reduce_sum(self.IMM_vae_sigma[t], 1) + tf.reduce_sum(
                 tf.square(self.IMM_vae_mu[t]), 1) - tf.reduce_sum(self.IMM_vae_logsigma[t] + 1, 1))
-        self.IMM_kl_loss = alpha_kl * tf.reduce_mean(tf.add_n(IMM_kl_loss))
+        self.IMM_kl_loss = tf.reduce_mean(tf.add_n(IMM_kl_loss))
         
         #discriminator loss
         self.dicrete_d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
@@ -242,18 +256,10 @@ class IGNITE(object):
           logits=self.generated, labels=zeros_target(self.batch_size, min=0.1, max=0.1)))
         self.discriminator_loss = self.dicrete_d_loss_real + self.dicrete_d_loss_fake
 
-        if self.conditional:
-            self.IMM_vae_loss = alpha_re*self.IMM_re_loss + \
-                            alpha_kl*self.IMM_kl_loss + \
-                             alpha_mt* self.vae_matching_loss + \
-                            alpha_ct* self.vae_contra_loss  + self.discriminator_loss
-                     
-        else:
-            self.IMM_vae_loss = alpha_re*self.IMM_re_loss + \
-                            alpha_kl*self.IMM_kl_loss + \
-                               alpha_mt* self.vae_matching_loss + \
-                               alpha_ct*self.vae_contra_loss  + alpha_discrim*self.discriminator_loss  
-  
+        self.IMM_vae_loss = self.alpha_re*self.IMM_re_loss + \
+                            self.alpha_kl*self.IMM_kl_loss + \
+                             self.alpha_mt* self.vae_matching_loss + \
+                            self.alpha_ct* self.vae_contra_loss  + self.alpha_discrim*self.discriminator_loss
       
 
         #######################
@@ -261,14 +267,16 @@ class IGNITE(object):
         #######################
         t_vars = tf.trainable_variables()
         observed_only_vae_vars = [var for var in t_vars if 'observed_only_VAE' in var.name]
-        s_vae_vars = [var for var in t_vars if 'Shared_VAE' in var.name]
+        #s_vae_vars = [var for var in t_vars if 'Shared_VAE' in var.name]
 
         IMM_vae_vars = [var for var in t_vars if 'IMM_VAE' in var.name]
+        
 
-        self.oo_v_op_pre = tf.train.AdamOptimizer(learning_rate=0.0005)\
+
+        self.oo_v_op_pre = tf.train.AdamOptimizer(learning_rate=self.IGNITE_lr)\
             .minimize(self.observed_only_vae_loss, var_list=observed_only_vae_vars)
 
-        self.imm_v_op_pre = tf.train.AdamOptimizer(learning_rate=0.0005)\
+        self.imm_v_op_pre = tf.train.AdamOptimizer(self.IGNITE_lr)\
             .minimize(self.IMM_vae_loss, var_list=IMM_vae_vars)
 
 
@@ -290,7 +298,8 @@ class IGNITE(object):
         self.IMM_vae_summary.append(tf.summary.scalar("IMM_VAE_loss/discriminator_loss", self.discriminator_loss))
         self.IMM_vae_summary.append(tf.summary.scalar("IMM_VAE_loss/vae_loss", self.IMM_vae_loss))
         self.IMM_vae_summary = tf.summary.merge(self.IMM_vae_summary)
- 
+        
+                                       
     def train(self):
         self.summary_writer = tf.summary.FileWriter(self.name, self.sess.graph)
 
@@ -299,23 +308,28 @@ class IGNITE(object):
 
         binary_mask_x = self.binary_mask_data_sample[: int(self.binary_mask_data_sample.shape[0]), :, :]
         
+        outcomes_x = self.outcomes[: int(self.outcomes.shape[0])]
+
+        
         IMM_x = self.IMM_data_sample[: int(self.IMM_data_sample.shape[0]), :, :]
 
         if self.conditional:
             label_data = self.interventions[: int(self.IMM_data_sample.shape[0]), :, :]
         data_size = observed_only_x.shape[0]
         num_batches = math.ceil(data_size // self.batch_size)
-        print("data_size", data_size)
 
         tf.global_variables_initializer().run()
+        
+        
 
         print('start training')
         global_id = 0
 
-        for epoch in range(self.num_pre_epochs):
+        for epoch in range(self.num_epochs):
             observed_only_x_random = observed_only_x
             IMM_x_random = IMM_x
             binary_mask_x_random = binary_mask_x
+            outcomes_x_random = outcomes_x
             if self.conditional:
                 label_data_random = label_data
          
@@ -325,25 +339,30 @@ class IGNITE(object):
             observed_only_rec_data_lst = []
             IMM_real_data_lst = []
             IMM_rec_data_lst = []
-       
+            aucs =[]
+            auprcs = []
             for b in range(num_batches):
 
                 feed_dict = {}
                 feed_dict[self.observed_only_real_data_pl] = observed_only_x_random[b * self.batch_size: (b + 1) * self.batch_size]
                 feed_dict[self.IMM_real_data_pl] = IMM_x_random[b * self.batch_size: (b + 1) * self.batch_size]
                 feed_dict[self.observed_only_real_data_binary_mask_pl] = binary_mask_x_random[b * self.batch_size: (b + 1) * self.batch_size]
+                select_outcomes= outcomes_x_random[b*self.batch_size: (b+1)*self.batch_size]
         
                 if self.conditional:
                     feed_dict[self.real_data_label_pl] = label_data_random[b * self.batch_size: (b + 1) * self.batch_size]
 
-                summary_result, _ = self.sess.run([self.observed_only_vae_summary, self.oo_v_op_pre], feed_dict=feed_dict)
-                self.summary_writer.add_summary(summary_result, global_id)
-                summary_result, _ = self.sess.run([self.IMM_vae_summary, self.imm_v_op_pre], feed_dict=feed_dict)
-                self.summary_writer.add_summary(summary_result, global_id)
+                summary_result_observed_only, _ = self.sess.run([self.observed_only_vae_summary, self.oo_v_op_pre], feed_dict=feed_dict)
+                self.summary_writer.add_summary(summary_result_observed_only, global_id)
+         
+
+                summary_result_IMM, _ = self.sess.run([self.IMM_vae_summary, self.imm_v_op_pre], feed_dict=feed_dict)
+                self.summary_writer.add_summary(summary_result_IMM, global_id)
+             
                 
-               
-
-
+                
+                #wandb.log(summary_result)
+                
                 observed_only_real_data, observed_only_rec_data, d_binary_mask = self.sess.run([self.observed_only_real_data_pl, self.observed_only_decoded_output, self.observed_only_real_data_binary_mask_pl], feed_dict=feed_dict)
                 observed_only_real_data_lst.append(observed_only_real_data)
                 observed_only_rec_data_lst.append(observed_only_rec_data)
@@ -358,15 +377,24 @@ class IGNITE(object):
 
                 global_id += 1
                 
-                
-                if (epoch%5 == 0):
-                    array = d_binary_mask
+                array = d_binary_mask   
+                imputed_ours =(array * observed_only_real_data)+ ((1-array)*IMM_rec_data)
+                auc, auprc=get_results_2(["results"],[imputed_ours],select_outcomes)
+                aucs.append(auc)
+                auprcs.append(auprc)
+                #wand.log({"auc": auc,"aurpc": auprc, "step":global_id})
+
+                #wand.tensorflow.log(summary_result_observed_only,global_id)
+                #wand.tensorflow.log(summary_result_IMM,global_id)
+
+                '''if (epoch%7 == 0):
+                   
                     array[array == 0] = np.nan
                     masked_plot=(observed_only_real_data*array)
                     self.compare_plot(masked_plot, observed_only_rec_data,IMM_rec_data, epoch)
-            
-           
-            print(len(IMM_rec_data_lst))      
+                '''
+            #wand.log({"aucs": np.mean(aucs),"aurpcs": np.mean(auprcs)})
+
         np.savez('data/'+self.experiment_name+'.npz', observed_only_real=np.vstack(observed_only_real_data_lst), observed_only_rec=np.vstack(observed_only_rec_data_lst),
                                      IMM_real=np.vstack(IMM_real_data_lst), IMM_rec=np.vstack(IMM_rec_data_lst))
         save_path = os.path.join(self.checkpoint_dir, "train_vae_{}".format(global_id))

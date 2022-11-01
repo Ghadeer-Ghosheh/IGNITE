@@ -3,7 +3,10 @@ import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 import warnings
 warnings.filterwarnings("ignore")
-from tensorflow.keras.regularizers import L2 as l2_regularizer
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
+#from tensorflow.python import keras
+from tensorflow.python.keras.regularizers import L2 as l2_regularizer
 from init_state import rnn_init_state
 
 class observed_only_vae(object):
@@ -89,8 +92,6 @@ class observed_only_vae(object):
         rec_dec_state = self.cell_dec.zero_state(self.batch_size, dtype=tf.float32)
         for t in range(self.time_steps):
             if self.conditional:
-                print("reconstruct_decoder")
-                print(conditions.get_shape(), dec_input[t].get_shape())
                 dec_input_with_c = tf.concat([dec_input[t], conditions[:,t,:]], axis=-1)
                 rec_h_dec, rec_dec_state = self.cell_dec(dec_input_with_c, rec_dec_state)
             else:
@@ -143,13 +144,13 @@ class observed_only_vae(object):
     def weight_variable(self, shape, scope_name, name):
         with tf.compat.v1.variable_scope(scope_name, reuse=tf.compat.v1.AUTO_REUSE):
             # initial = tf.truncated_normal(shape, stddev=0.1)
-            wv = tf.compat.v1.get_variable(name=name, shape=shape, initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform"))
+            wv = tf.compat.v1.get_variable(name=name, shape=shape, initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform"),use_resource= False)
         return wv
 
     def bias_variable(self, shape, scope_name, name=None):
         with tf.compat.v1.variable_scope(scope_name, reuse=tf.compat.v1.AUTO_REUSE):
             # initial = tf.constant(0.1, shape=shape)
-            bv = tf.compat.v1.get_variable(name=name, shape=shape, initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform"))
+            bv = tf.compat.v1.get_variable(name=name, shape=shape, initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform"),use_resource= False)
         return bv
 
 class IMM_vae(object):
@@ -293,13 +294,13 @@ class IMM_vae(object):
     def weight_variable(self, shape, scope_name, name):
         with tf.compat.v1.variable_scope(scope_name, reuse=tf.compat.v1.AUTO_REUSE):
             # initial = tf.truncated_normal(shape, stddev=0.1)
-            wv = tf.compat.v1.get_variable(name=name, shape=shape, initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform"))
+            wv = tf.compat.v1.get_variable(name=name, shape=shape, initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform"),use_resource= False)
         return wv
 
     def bias_variable(self, shape, scope_name, name=None):
         with tf.compat.v1.variable_scope(scope_name, reuse=tf.compat.v1.AUTO_REUSE):
             # initial = tf.constant(0.1, shape=shape)
-            bv = tf.compat.v1.get_variable(name=name, shape=shape, initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform"))
+            bv = tf.compat.v1.get_variable(name=name, shape=shape, initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform"),use_resource= False)
         return bv
          
     def build_Discriminator(self, input_discriminator):

@@ -1,4 +1,6 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.compat.v1.disable_v2_behavior()
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 class Bilateral_LSTM_cell():
     def __init__(self, input_dim, hidden_dim, scope_name):
@@ -13,9 +15,9 @@ class Bilateral_LSTM_cell():
 
         # Input Gate (Wi, Ui, Vi)
         with tf.variable_scope(self.scope_name + "Input_gate", reuse=tf.AUTO_REUSE):
-            Wi = tf.get_variable(name='Wi', shape=[self.input_dim,  self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1))
-            Ui = tf.get_variable(name='Ui', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1))
-            Vi = tf.get_variable(name='Vi', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1))
+            Wi = tf.get_variable(name='Wi', shape=[self.input_dim,  self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1),use_resource= False)
+            Ui = tf.get_variable(name='Ui', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1),use_resource= False)
+            Vi = tf.get_variable(name='Vi', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1),use_resource= False)
 
             i = tf.sigmoid(
                 tf.matmul(x, Wi) +
@@ -25,9 +27,9 @@ class Bilateral_LSTM_cell():
 
         # Forget gate (Wf, Uf, Vf)
         with tf.variable_scope(self.scope_name + "Forget_gate", reuse=tf.AUTO_REUSE):
-            Wf = tf.get_variable(name='Wf', shape=[self.input_dim,  self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1))
-            Uf = tf.get_variable(name='Uf', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1))
-            Vf = tf.get_variable(name='Vf', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1))
+            Wf = tf.get_variable(name='Wf', shape=[self.input_dim,  self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1),use_resource= False)
+            Uf = tf.get_variable(name='Uf', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1),use_resource= False)
+            Vf = tf.get_variable(name='Vf', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1),use_resource= False)
 
             f = tf.sigmoid(
                 tf.matmul(x, Wf) +
@@ -37,9 +39,9 @@ class Bilateral_LSTM_cell():
 
         # Output gate (Wo, Uo, Vo)
         with tf.variable_scope(self.scope_name + "Output_gate", reuse=tf.AUTO_REUSE):
-            Wo = tf.get_variable(name='Wo', shape=[self.input_dim,  self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1))
-            Uo = tf.get_variable(name='Uo', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1))
-            Vo = tf.get_variable(name='Vo', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1))
+            Wo = tf.get_variable(name='Wo', shape=[self.input_dim,  self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1),use_resource= False)
+            Uo = tf.get_variable(name='Uo', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1),use_resource= False)
+            Vo = tf.get_variable(name='Vo', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1),use_resource= False)
 
             o = tf.sigmoid(
                 tf.matmul(x, Wo) +
@@ -49,9 +51,9 @@ class Bilateral_LSTM_cell():
 
         # Updated part for new cell state (Wc, Uc, Vc)
         with tf.variable_scope(self.scope_name + "Cell_gate", reuse=tf.AUTO_REUSE):
-            Wc = tf.get_variable(name='Wc', shape=[self.input_dim,  self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1))
-            Uc = tf.get_variable(name='Uc', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1))
-            Vc = tf.get_variable(name='Vc', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1))
+            Wc = tf.get_variable(name='Wc', shape=[self.input_dim,  self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1),use_resource= False)
+            Uc = tf.get_variable(name='Uc', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1),use_resource= False)
+            Vc = tf.get_variable(name='Vc', shape=[self.hidden_dim, self.hidden_dim], initializer=tf.random_normal_initializer(mean=0, stddev=0.1),use_resource= False)
 
             c_ = tf.nn.tanh(
                 tf.matmul(x, Wc) +

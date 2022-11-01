@@ -1,4 +1,7 @@
 import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
 def rnn_init_state(init_, batch_size, num_layers, num_units, rnn_network=None, initial_stddev=0.02):
 
     if init_ == "zero":
@@ -15,11 +18,11 @@ def rnn_init_state(init_, batch_size, num_layers, num_units, rnn_network=None, i
         initial_state = []
         with tf.compat.v1.variable_scope("Discrete_discriminator",  reuse=tf.AUTO_REUSE):
             for i in range(num_layers):
-                sub_initial_state1 = tf.compat.v1.get_variable("layer{}_initial_state1".format(i), (1, num_units),
-                                                     initializer=tf.random_normal_initializer(stddev=initial_stddev))
+                sub_initial_state1 = tf.get_variable("layer{}_initial_state1".format(i), (1, num_units),
+                                                     initializer=tf.random_normal_initializer(stddev=initial_stddev),use_resource= False)
                 sub_initial_state1 = tf.tile(sub_initial_state1, (batch_size, 1))
-                sub_initial_state2 = tf.compat.v1.get_variable("layer{}_initial_state2".format(i), (1, num_units),
-                                                    initializer=tf.random_normal_initializer(stddev=initial_stddev))
+                sub_initial_state2 = tf.get_variable("layer{}_initial_state2".format(i), (1, num_units),
+                                                    initializer=tf.random_normal_initializer(stddev=initial_stddev),use_resource= False)
                 sub_initial_state2 = tf.tile(sub_initial_state2, (batch_size, 1))
                 sub_initial_state = tf.nn.rnn_cell.LSTMStateTuple(sub_initial_state1, sub_initial_state2)
                 initial_state.append(sub_initial_state)
