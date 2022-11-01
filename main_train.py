@@ -141,7 +141,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_epochs', type=int, default=100, help='The number of epoches in training  IGNITE.')
     parser.add_argument('--shared_latent_dim', type=int, default=9, help='The dimension of latent space in training  IGNITE.')
 
-    parser.add_argument('--IGNITE_lr', type=float, default=0.001)
+    parser.add_argument('--IGNITE_lr', type=float, default=0.0005)
 
     parser.add_argument('--alpha_re', type=float, default=2)
     parser.add_argument('--alpha_kl', type=float, default=1.5)
