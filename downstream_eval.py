@@ -9,8 +9,8 @@ def get_pecent_missing_samples(mask_, percent, percent_2, feat_measured_min, fea
     count=0
     index = []
     high= []
-    min_feat_measured = feat_measured_min*35
-    max_feat_measured = feat_measured_max*35
+    min_feat_measured = feat_measured_min*mask_.shape[2]
+    max_feat_measured = feat_measured_max*mask_.shape[2]
     
     #print(min_feat_measured)
     for i in mask_:
