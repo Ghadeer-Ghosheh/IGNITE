@@ -16,7 +16,7 @@ class observed_only_vae(object):
                  enc_size=128, dec_size=128,
                  enc_layers=3, dec_layers=3,
                  keep_prob=0.8, l2scale=0.001,
-                 conditional=False, num_labels=0):
+                 conditional=True, num_labels=0):
 
         self.batch_size = batch_size
         self.time_steps = time_steps
@@ -160,7 +160,7 @@ class IMM_vae(object):
                  enc_size=128, dec_size=128,
                  enc_layers=3, dec_layers=3,
                  keep_prob=0.8, l2scale=0.001,
-                 conditional=False, num_labels=0):
+                 conditional=True, num_labels=0):
 
         self.batch_size = batch_size
         self.time_steps = time_steps

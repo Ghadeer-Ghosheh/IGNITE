@@ -27,7 +27,22 @@ def create_new_column_g(row):
   
 def create_x_matrix(x):
       return x.iloc[:, 2:].values
+def create_individualized_missingness_mask(mask):
+  np.set_printoptions(suppress=False, precision= 9)
+  samples_len =mask.shape[0]
+  time_steps = mask.shape[1]
+  features = mask.shape[2]
   
+  personalized_mask_full = np.empty(shape=[samples_len,time_steps,features])
+  personalized_mask_patient = []
+  for patient_mask in mask:
+        num_measurments_per_feature = patient_mask.sum(axis=0)
+        # for each patient mask
+        tf=((num_measurments_per_feature)/time_steps)
+        personalized_mask_patient.append(np.where(patient_mask == 0, tf, patient_mask))
+    # stack all feature-specific patient masks tnto a 3d tensor
+  personalized_mask_full = np.stack(personalized_mask_patient, axis=0)
+  return(personalized_mask_full)
   
 def create_conditions(treat, static_data):
       dfs = []
@@ -61,4 +76,12 @@ def create_conditions(treat, static_data):
       interventions_3d = np.array(list(result.reset_index().groupby("ID").apply(create_x_matrix)))
       return(interventions_3d)
   
-  
+def new_static(static_data, timesteps):
+    static_data['age'] = static_data.apply(lambda w: create_new_column(w), axis=1)
+    static_data['gender'] = static_data.apply(lambda w: create_new_column_g(w), axis=1)
+
+    combined = static_data[["gender", "age"]]
+    result=combined.apply(lambda r:str(''.join(str(r[col]) for col in combined.columns)),axis=1)
+    result=pd.get_dummies(result)
+    repeated_encoding = np.stack([result]*timesteps, axis=1)
+    return (repeated_encoding)

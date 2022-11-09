@@ -16,7 +16,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import random
 import math
-#import wandb
+import wandb
 from downstream_eval import *
 
 
@@ -38,7 +38,7 @@ class IGNITE(object):
                  alpha_re, alpha_kl, alpha_mt, 
                 alpha_ct, alpha_discrim,
                 IGNITE_lr,
-                 binary_mask_data_sample,experiment_name,
+                 binary_mask_data_sample,experiment_name,keep_prob,
                  conditional=False, num_labels=0,
                  interventions=None):
 
@@ -67,7 +67,7 @@ class IGNITE(object):
         self.num_labels = num_labels
         self.conditional = conditional
         self.name = "logs/neww/"+self.experiment_name
-
+        self.keep_prob = keep_prob
 
         self.alpha_re = alpha_re
         self.alpha_kl = alpha_kl
@@ -210,13 +210,7 @@ class IGNITE(object):
         #################
         # (1) VAE loss  #
         #################
-        '''
-        alpha_re = 1
-        alpha_kl = 0.1
-        alpha_mt = 0.01
-        alpha_ct =0.0001
-        alpha_discrim = 0.5
-        '''
+     
         x_latent_1 = tf.stack(self.c_enc_z, axis=1)
         x_latent_2 = tf.stack(self.d_enc_z, axis=1)
         self.vae_matching_loss = tf.losses.mean_squared_error(x_latent_1, x_latent_2)
@@ -251,10 +245,11 @@ class IGNITE(object):
         
         #discriminator loss
         self.dicrete_d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-           logits=self.real, labels=ones_target(self.batch_size, min=0.8, max=0.9)))
+           logits=self.real, labels=ones_target(self.batch_size, min=0.7, max=1.2)))
         self.dicrete_d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-          logits=self.generated, labels=zeros_target(self.batch_size, min=0.1, max=0.1)))
+          logits=self.generated, labels=zeros_target(self.batch_size, min=0.1, max=0.3)))
         self.discriminator_loss = self.dicrete_d_loss_real + self.dicrete_d_loss_fake
+
 
         self.IMM_vae_loss = self.alpha_re*self.IMM_re_loss + \
                             self.alpha_kl*self.IMM_kl_loss + \
@@ -339,6 +334,7 @@ class IGNITE(object):
             observed_only_rec_data_lst = []
             IMM_real_data_lst = []
             IMM_rec_data_lst = []
+            d_binary_mask_lst = []
             aucs =[]
             auprcs = []
             for b in range(num_batches):
@@ -370,22 +366,24 @@ class IGNITE(object):
                 IMM_real_data, IMM_rec_data,d_binary_mask= self.sess.run([self.IMM_real_data_pl, self.IMM_decoded_output, self.observed_only_real_data_binary_mask_pl], feed_dict=feed_dict)
                 IMM_real_data_lst.append(IMM_real_data)
                 IMM_rec_data_lst.append(IMM_rec_data)
+                d_binary_mask_lst.append(d_binary_mask)
+
 
                 assert not np.any(np.isnan(IMM_real_data))
 
                 assert not np.any(np.isnan(IMM_rec_data))
 
                 global_id += 1
-                
+                '''
                 array = d_binary_mask   
                 imputed_ours =(array * observed_only_real_data)+ ((1-array)*IMM_rec_data)
                 auc, auprc=get_results_2(["results"],[imputed_ours],select_outcomes)
                 aucs.append(auc)
                 auprcs.append(auprc)
-                #wand.log({"auc": auc,"aurpc": auprc, "step":global_id})
-
-                #wand.tensorflow.log(summary_result_observed_only,global_id)
-                #wand.tensorflow.log(summary_result_IMM,global_id)
+                wandb.log({"auc": auc,"aurpc": auprc, "step":global_id})
+                '''
+                wandb.tensorflow.log(summary_result_observed_only,global_id)
+                wandb.tensorflow.log(summary_result_IMM,global_id)
 
                 '''if (epoch%7 == 0):
                    
@@ -393,7 +391,13 @@ class IGNITE(object):
                     masked_plot=(observed_only_real_data*array)
                     self.compare_plot(masked_plot, observed_only_rec_data,IMM_rec_data, epoch)
                 '''
-            #wand.log({"aucs": np.mean(aucs),"aurpcs": np.mean(auprcs)})
+            IMM_rec=np.vstack(IMM_rec_data_lst)
+            observed_only_real=np.vstack(observed_only_real_data_lst)
+            d_binary_masks = np.vstack(d_binary_mask_lst)
+            imputed_ours =(d_binary_masks * d_binary_masks)+ ((1-d_binary_masks)*IMM_rec)
+   
+            auc, auprc=get_results_2(["results"],[imputed_ours],outcomes_x)
+            wandb.log({"aucs": auc,"aurpcs": auprc})
 
         np.savez('data/'+self.experiment_name+'.npz', observed_only_real=np.vstack(observed_only_real_data_lst), observed_only_rec=np.vstack(observed_only_rec_data_lst),
                                      IMM_real=np.vstack(IMM_real_data_lst), IMM_rec=np.vstack(IMM_rec_data_lst))
