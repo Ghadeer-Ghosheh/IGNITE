@@ -394,7 +394,7 @@ class IGNITE(object):
             IMM_rec=np.vstack(IMM_rec_data_lst)
             observed_only_real=np.vstack(observed_only_real_data_lst)
             d_binary_masks = np.vstack(d_binary_mask_lst)
-            imputed_ours =(d_binary_masks * d_binary_masks)+ ((1-d_binary_masks)*IMM_rec)
+            imputed_ours =(d_binary_masks * observed_only_real)+ ((1-d_binary_masks)*IMM_rec)
    
             auc, auprc=get_results_2(["results"],[imputed_ours],outcomes_x)
             wandb.log({"aucs": auc,"aurpcs": auprc})
