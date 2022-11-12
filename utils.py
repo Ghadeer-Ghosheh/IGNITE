@@ -13,17 +13,6 @@ def target_flip(size, min, max, ratio):
     index = np.random.choice(size, int(size * ratio), replace=False)
     ori[index] = 1 - ori[index]
     return tf.convert_to_tensor(ori, dtype=tf.float32)
-def create_new_column(row):
-      if  row['Age'] > 50:
-          return 1
-      else:
-          return 0
-def create_new_column_g(row):
-      if  row['Gender'] == 1:
-          return 1
-      else:
-          return 0
-  
   
 def create_x_matrix(x):
       return x.iloc[:, 2:].values
