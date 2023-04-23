@@ -29,7 +29,6 @@ with open(os.path.join(data_path, 'X_0.5_1234col_last.pkl'), 'rb') as f:
 missing_mask=~np.isnan(X)*1
 #X,label=get_sets_feature_missingess2(X,outcomes, miss,0, 0.25)
   
-#X_intact, X, missing_mask, indicating_mask = mcar(X, 0) # hold out 10% observed values as ground truth
 X = masked_fill(X, 1 - missing_mask, np.nan)
 print(X.shape)
 # Model training. This is PyPOTS showtime. 
