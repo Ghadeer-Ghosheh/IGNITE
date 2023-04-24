@@ -362,8 +362,8 @@ class IGNITE(object):
                 auprcs.append(auprc)
                 wandb.log({"auc": auc,"aurpc": auprc, "step":global_id})
                 '''
-                wandb.tensorflow.log(summary_result_observed_only,global_id)
-                wandb.tensorflow.log(summary_result_IMM,global_id)
+                #wandb.tensorflow.log(summary_result_observed_only,global_id)
+                #wandb.tensorflow.log(summary_result_IMM,global_id)
 
                 '''if (epoch%7 == 0):
                    
@@ -381,10 +381,10 @@ class IGNITE(object):
 
    
             auc, auprc,test_f1,test_balanced_accuracy, f, g=get_results_2(["results"],[imputed_ours],outcomes_x)
-            wandb.log({"aucs": auc,"aurpcs": auprc,  "epoch": epoch, "test_f1": test_f1,"test_balanced_accuracy": test_balanced_accuracy})
+            #wandb.log({"aucs": auc,"aurpcs": auprc,  "epoch": epoch, "test_f1": test_f1,"test_balanced_accuracy": test_balanced_accuracy})
 
             auc, auprc,test_f1,test_balanced_accuracy,f, g=get_results_2(["results"],[oo_ours],outcomes_x)
-            wandb.log({"aucs_oo": auc,"aurpcs_oo": auprc,"test_f1_oo": test_f1,"test_balanced_accuracy_oo": test_balanced_accuracy})
+            #wandb.log({"aucs_oo": auc,"aurpcs_oo": auprc,"test_f1_oo": test_f1,"test_balanced_accuracy_oo": test_balanced_accuracy})
         np.savez('data/'+self.experiment_name+'.npz', observed_only_real=np.vstack(observed_only_real_data_lst), observed_only_rec=np.vstack(observed_only_rec_data_lst),
                                      IMM_real=np.vstack(IMM_real_data_lst), IMM_rec=np.vstack(IMM_rec_data_lst))
         save_path = os.path.join(self.checkpoint_dir, "train_vae_{}".format(global_id))
