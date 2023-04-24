@@ -109,9 +109,7 @@ def main (args):
         pickle.dump(observed_only_vae_x,f)
     with open('outcomes_4434.pkl', 'wb') as f:
          pickle.dump(outcomes, f)
-    '''
-    wandb.init(project="ignite", entity="baharmichal",sync_tensorboard=True,settings=dict(start_method='thread'), config = args)
-    
+    '''    
     tf.reset_default_graph()
     
     run_config = tf.ConfigProto()
