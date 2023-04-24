@@ -187,8 +187,7 @@ class IGNITE(object):
         x_latent_1 = tf.stack(self.c_enc_z, axis=1)
         x_latent_2 = tf.stack(self.d_enc_z, axis=1)
     
-        self.vae_matching_loss = 0
-        #self.alpha_mt*(tf.losses.mean_squared_error(x_latent_1, x_latent_2))
+        self.vae_matching_loss = self.alpha_mt*(tf.losses.mean_squared_error(x_latent_1, x_latent_2))
         
         
         self.vae_contra_loss = self.alpha_ct*(nt_xent_loss(tf.reshape(x_latent_1, [self.dynamic_batch, -1]),
