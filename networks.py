@@ -315,7 +315,7 @@ class IMM_vae(object):
         w_sigma = self.weight_variable([self.enc_size, self.z_dim], scope_name='Sampling_layer/Shared_VAE', name='w_sigma')
         b_sigma = self.bias_variable([self.z_dim], scope_name='Sampling_layer/Shared_VAE', name='b_sigma')
 
-        w_h_dec = self.weight_variable([self.dec_size, self.dim], scope_name='Decoder/Linear/', name='w_h_dec')
+        w_h_dec = self.weight_variable([self.dec_size, self.dim], scope_name='Decoder/Linear/IMM_VAE', name='w_h_dec')
         b_h_dec = self.bias_variable([self.dim], scope_name='Decoder/Linear/IMM_VAE', name='b_h_dec')
 
         return w_mu, b_mu, w_sigma, b_sigma, w_h_dec, b_h_dec
