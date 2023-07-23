@@ -99,8 +99,10 @@ def main (args, X, conditions, outcomes):
                           interventions=intervention)
     model.build()
     model.train() # train the model using the training data
-    model.test(X_test,conditions_test) # test the model on the test set to calculate the reconstruction loss for the MCAR experiments
-    model.test_full(X,conditions)
+    model.test(X_test,conditions_test, "test") # test the model on the test set to calculate the reconstruction loss for the MCAR experiments
+    model.test(X,conditions, "full")
+
+
 
 
 

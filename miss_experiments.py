@@ -22,15 +22,6 @@ X_test= get_split_test(0.8, X)
 mask=~np.isnan(X_test)*1
 
 new_tensor, new_mask,miss_indices=introduce_miss_patient(X_test,mask, 0.1,42 )
-'''
-list_indicate= []
-for i in range (X_test.shape[0]):
-    flat= np.zeros((X_test.shape[1],X_test.shape[2])).reshape(-1)
-    if len(miss_indices[i]) > 0:
-        flat[miss_indices[i]] = 1
-    list_indicate.append(flat.reshape(X_test.shape[1],X_test.shape[2]))
-indicating_mask=np.stack(list_indicate)
-'''
 LOCF, zero, mean, MICE= get_impuation(new_tensor)
 
 
