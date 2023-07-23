@@ -21,7 +21,16 @@ In this work, we propose a novel hybrid deep-generative model for imputing perso
 
 ## Code 
 
+The main.py file has the code to load the datasets and twi main functions.
+* ```model.train()```: This function trains IGNITE model on the training set.
+* ```model.test() ```  This function tests the model and generates imputations without retraining.
+--> This function is called twice once on the test set with the MCAR-introduced missingness for the reconstruction task, and another time to generate imputations for the full datasets for the downstream task.
+## Environment
 
+To run this code repo, please download the requirements file and run the following command.
+```
+$ conda create -n <environment-name> --file req.txt
+```
 
 ## Citation
 
