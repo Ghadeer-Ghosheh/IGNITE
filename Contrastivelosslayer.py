@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Jul 23 22:31:59 2023
+
+@author: gghos
+"""
+
 import tensorflow as tf2
 tf2.random.set_seed(42)
 from tfdeterminism import patch
@@ -11,7 +18,7 @@ import tensorflow.compat.v1 as tf
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 tf.compat.v1.disable_v2_behavior()
 
-def nt_xent_loss(out, out_aug, batch_size, hidden_norm=True, temperature=0.1):
+def nt_xent_loss(out, out_aug, batch_size, hidden_norm=True, temperature=0.01):
     """
     https://github.com/google-research/simclr/blob/master/objective.py
     """
@@ -23,6 +30,7 @@ def nt_xent_loss(out, out_aug, batch_size, hidden_norm=True, temperature=0.1):
     masks = tf.one_hot(tf.range(batch_size), batch_size)
     masksINF = masks * INF
 
+    print(labels)
     logits_aa = tf.matmul(out, out, transpose_b=True) / temperature
     logits_bb = tf.matmul(out_aug, out_aug, transpose_b=True) / temperature
 
@@ -37,6 +45,3 @@ def nt_xent_loss(out, out_aug, batch_size, hidden_norm=True, temperature=0.1):
     loss = loss_a + loss_b
     
     return loss
-
-   
-  
