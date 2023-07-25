@@ -7,6 +7,7 @@ Created on Sat Jul  8 16:45:54 2023
 
 #from miss_utils import *
 from bottleneck import push
+import pandas as pd
 import numpy as np
 from bottleneck import push
 from fancyimpute import IterativeImputer
@@ -133,15 +134,6 @@ def introduce_miss_patient(patient_data,patient_masks, miss_ratio, random_seed):
     masks_stacked = np.stack(masks_w_miss, axis = 0)
     return df_stacked,masks_stacked, miss_indices_list
 
-
-
-def renormalize(data, means, stds):
-    renorms=[]
-    for patient in data:
-        r= patient*stds+ means
-        renorms.append(r)
-    renorm_full = np.stack(renorms, axis=0)
-    return(renorm_full)
 def normalize(data, mins, maxs):
 
     renorms=[]
@@ -155,6 +147,29 @@ def normalize(data, mins, maxs):
     renorm_full = np.stack(renorms, axis=0)
 
     return(renorm_full)
+
+def create_age_column(df):
+  bins = [15, 45,65, 300]
+  labels = ['15-45', '45-65', '65+']
+  df = pd.cut(df, bins, labels = labels,include_lowest = True)
+  return(df)
+def create_new_column_gender(row):
+      if  row['Gender'] == 1:
+          return 1
+      else:
+          return 0
+def get_conditions(static_df, age_column_name, gender_column_name, interventions_3d):
+        age_statics= static_df.sort_index()[age_column_name]
+        age_statics = create_age_column(age_statics)
+        age_group=np.array(list(age_statics))
+        one_hot = pd.get_dummies(pd.DataFrame(age_group))
+        one_hot=one_hot.rename(columns={ "0_15-45": "young", "0_45-65": "midage", "0_65+": "elderly"})
+        one_hot.set_index(age_statics.index, inplace= True)
+        static_df[gender_column_name] = static_df.apply(lambda w: create_new_column_gender(w), axis=1)
+        combined =pd.concat([one_hot,static_df[gender_column_name]], axis = 1)
+        repeated_encoding = np.stack([combined]*interventions_3d.shape[1], axis=1)
+        repeated_encoding =np.concatenate([interventions_3d, repeated_encoding], axis = 2)
+        return(repeated_encoding)
 def prepare_fills(df, means):
     # input for the IMM network (forward/backward fill then population mean if never observed)
     filled = np.flip(push(df, axis=1), axis=1)
