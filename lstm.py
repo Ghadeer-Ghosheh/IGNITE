@@ -18,7 +18,6 @@ from prep_inputs import get_impuation
 from downstream_eval import *
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.metrics import average_precision_score, roc_auc_score,f1_score,balanced_accuracy_score,recall_score,precision_score
-import wandb
 tf.random.set_seed(42)
 np.random.seed(42)
 rn.seed(42)
@@ -270,7 +269,7 @@ def main (args):
                 train_balanced_accuracy = balanced_accuracy_score(np.argmax(y_train,axis = 1), train_preds_)
                 train_aucs_macro.append(train_auc_macro)
                 # train_acc = accuracy_score(y_train[:, 0], train_preds[:, 0])
-                wandb.log({"train aucs": train_auc_macro,"train f1": train_f1, "train balanaced acc":train_balanced_accuracy,"epoch":epoch})
+                #wandb.log({"train aucs": train_auc_macro,"train f1": train_f1, "train balanaced acc":train_balanced_accuracy,"epoch":epoch})
 
                 # prediction - test
                 cur_test_preds, pred= sess.run(model.prediction, {data: x_test, target: y_test, dropout_prob: 1, reg: rp})
@@ -293,7 +292,7 @@ def main (args):
                 print("Test  Balanced Acc on epoch {} is {}".format(epoch, test_balanced_accuracy))
                 print("Test F1 AUC on epoch {} is {}".format(epoch, test_f1))
                 print("Test AUC on epoch {} is {}".format(epoch, test_auc_macro))
-                wandb.log({"epoch":epoch, "test aucs": test_auc_macro,"test auprc":test_auprc_macro,"test f1": test_f1, "test balanaced acc":test_balanced_accuracy, "test Recall": test_recall, "Test Precision": test_precision_score, "specificty": specificty})        
+                #wandb.log({"epoch":epoch, "test aucs": test_auc_macro,"test auprc":test_auprc_macro,"test f1": test_f1, "test balanaced acc":test_balanced_accuracy, "test Recall": test_recall, "Test Precision": test_precision_score, "specificty": specificty})        
         
 
 if __name__ == '__main__':  
