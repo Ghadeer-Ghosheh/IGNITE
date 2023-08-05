@@ -40,7 +40,7 @@ miss_new = ~np.isnan(X_test)*1
 X_test = masked_fill(X_test, 1 - miss_new, np.nan)
 print(X.shape)
 
-'''
+
 #####################################################
 #####################################################
 brits= BRITS(n_steps=48, n_features=35,epochs=20, rnn_hidden_size = 108)
@@ -58,7 +58,7 @@ with open('BRITS_0.1_X_full.pkl', 'wb') as handle:
 
 #####################################################
 #####################################################
-'''
+
 saits = SAITS(n_steps=48, n_features=35, n_layers=2, d_model=256, d_inner=128, n_head=4, d_k=64, d_v=64, dropout=0.1, epochs=20)
 saits.fit(X_training) 
 imputation = saits.impute(X_test)
