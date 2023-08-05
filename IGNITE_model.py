@@ -12,7 +12,6 @@ import tensorflow as tf2
 
 import numpy as np
 import keras.backend as K
-import wandb
 import os
 np.random.seed(42)
 os.environ['PYTHONHASHSEED'] = '1'
@@ -304,7 +303,7 @@ class IGNITE(object):
 
                 summary_result_observed_only, _,observed_only_rec_data= self.sess.run([self.observed_only_vae_summary, self.oo_v_op_pre,self.observed_only_decoded_output], feed_dict=feed_dict)
                 self.summary_writer.add_summary(summary_result_observed_only, epoch)
-                wandb.tensorflow.log(summary_result_observed_only,epoch)
+                #wandb.tensorflow.log(summary_result_observed_only,epoch)
                 observed_only_rec_data_lst.append(observed_only_rec_data)
 
     
@@ -312,19 +311,19 @@ class IGNITE(object):
                 self.summary_writer.add_summary(summary_result_IMM, epoch)
                 IMM_rec_data_lst.append(IMM_rec_data)
 
-                wandb.tensorflow.log(summary_result_IMM,epoch)
+                #wandb.tensorflow.log(summary_result_IMM,epoch)
 
              
             observed_only_rec_data_lst_rec=np.vstack(observed_only_rec_data_lst)
 
             oo_ours =(self.binary_mask_data_sample * self.observed_only_data_sample)+ ((1-self.binary_mask_data_sample)*observed_only_rec_data_lst_rec)
             auc, auprc,test_f1,test_balanced_accuracy,f, g=get_results_2(["results"],[oo_ours],self.outcomes)
-            wandb.log({"aucs_oo": auc,"aurpcs_oo": auprc,"test_f1_oo": test_f1,"test_balanced_accuracy_oo": test_balanced_accuracy, "epoch": epoch})
+            #wandb.log({"aucs_oo": auc,"aurpcs_oo": auprc,"test_f1_oo": test_f1,"test_balanced_accuracy_oo": test_balanced_accuracy, "epoch": epoch})
             
             IMM_rec=np.vstack(IMM_rec_data_lst)
             imputed_ours =(self.binary_mask_data_sample *self.observed_only_data_sample)+ ((1-self.binary_mask_data_sample)*IMM_rec)
             auc, auprc,test_f1,test_balanced_accuracy, f, g=get_results_2(["results"],[imputed_ours],self.outcomes)
-            wandb.log({"aucs": auc,"aurpcs": auprc,  "epoch": epoch, "test_f1": test_f1,"test_balanced_accuracy": test_balanced_accuracy})
+            #wandb.log({"aucs": auc,"aurpcs": auprc,  "epoch": epoch, "test_f1": test_f1,"test_balanced_accuracy": test_balanced_accuracy})
         np.savez('data/'+self.experiment_name+'.npz', observed_only_real=self.observed_only_data_sample, observed_only_rec=observed_only_rec_data_lst_rec,
                                      IMM_real=self.IMM_data_sample, IMM_rec=IMM_rec)
         self.save_path = os.path.join(self.checkpoint_dir, "pretrain_vae_{}".format(epoch))
