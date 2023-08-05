@@ -61,8 +61,9 @@ class observed_only_vae(object):
                   Alpha_t[t] = self.FeatureAttention(self.enc_state, self.cell_state_enc,input_data)
 
               X_tilde_t = tf.multiply( Alpha_t[t], input_data[:, None, t, :])
-         
-              X_tilde_t = tf.concat([X_tilde_t, conditions[:, None, t, :]], axis=-1)
+              if self.conditional:
+
+                  X_tilde_t = tf.concat([X_tilde_t, conditions[:, None, t, :]], axis=-1)
               with tf.compat.v1.variable_scope('observed_only_VAE_Encoder', regularizer=l2_regularizer(self.l2scale), reuse=tf.compat.v1.AUTO_REUSE):
                   tf2.random.set_seed(seed)
               
