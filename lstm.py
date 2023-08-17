@@ -14,7 +14,7 @@ import random as rn
 from sklearn.model_selection import train_test_split
 from bottleneck import push
 from fancyimpute import IterativeImputer
-from prep_inputs import get_impuation
+from prep_inputs import get_impuation, get_sets_sample_missingness, get_sets_feature_missingness
 from downstream_eval import *
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.metrics import average_precision_score, roc_auc_score,f1_score,balanced_accuracy_score,recall_score,precision_score
@@ -52,6 +52,9 @@ def main (args):
 
         with open(os.path.join('SAITS_X_full.pkl'), 'rb') as f:
          SAITS = pickle.load(f)
+
+        original,conditions,outcomes= get_sets_sample_missingness(original,conditions,outcomes, 0.75,1.1)
+
         miss=~np.isnan(original)*1
         zero=np.where(np.isnan(original), 0, original)
         array= np.array(miss, dtype=float)   
