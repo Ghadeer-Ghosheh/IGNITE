@@ -94,7 +94,7 @@ def main (args):
         test_split_ratio = 0.3
         
         
-        wandb.init(project="ignite_lstm", entity="baharmichal",sync_tensorboard=True,settings=dict(start_method='thread'), config = args)
+        wandb.init(project="ignite_lstm", entity="....",sync_tensorboard=True,settings=dict(start_method='thread'), config = args)
         print("active")
         
         # training/test/validation set split
