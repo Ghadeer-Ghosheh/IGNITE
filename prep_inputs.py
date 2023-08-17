@@ -12,7 +12,23 @@ import numpy as np
 from bottleneck import push
 from fancyimpute import IterativeImputer
 import pycorruptor as corruptor
-
+def create_individualized_missingness_mask(mask):
+  np.set_printoptions(suppress=False, precision= 9)
+  samples_len =mask.shape[0]
+  time_steps = mask.shape[1]
+  features = mask.shape[2]
+  
+  personalized_mask_full = np.empty(shape=[samples_len,time_steps,features])
+  personalized_mask_patient = []
+  personalized_mask_sample = np.ones(shape=[time_steps,features])
+  for patient_mask in mask:
+        num_measurments_per_feature = patient_mask.sum(axis=0)
+        # for each patient mask
+        tf=((num_measurments_per_feature)/time_steps)
+        personalized_mask_patient.append(np.where(patient_mask == 0, tf, patient_mask))
+    # stack all feature-specific patient masks tnto a 3d tensor
+  personalized_mask_full = np.stack(personalized_mask_patient, axis=0)
+  return(personalized_mask_full)
 def create_individualized_missingness_mask2(mask):
   np.set_printoptions(suppress=False, precision= 9)
   samples_len =mask.shape[0]
@@ -53,7 +69,7 @@ def create_masks(data, indicate_rate):
     miss=~np.isnan(data)*1
     new, indicate_mask,_=introduce_miss_patient(data,miss, indicate_rate,42 )
     miss=~np.isnan(new)*1
-    mask_personalized = create_individualized_missingness_mask2(miss)
+    mask_personalized = create_individualized_missingness_mask(miss)
     zero=np.where(np.isnan(push(new, axis = 1)), 0 , push(new, axis = 1))
     noise= gen_input_noise(new.shape[0],new.shape[1],new.shape[2])
     noise_input= sum_nan_arrays(new,noise)
@@ -65,7 +81,7 @@ def create_masks(data, indicate_rate):
 
 def input_impute(data):
     miss=~np.isnan(data)*1
-    mask_personalized = create_individualized_missingness_mask2(miss)
+    mask_personalized = create_individualized_missingness_mask(miss)
     zero=np.where(np.isnan(push(data, axis = 1)), 0 , push(data, axis = 1))
     noise= gen_input_noise(data.shape[0],data.shape[1],data.shape[2])
     noise_input= sum_nan_arrays(data,noise)
@@ -94,15 +110,21 @@ def get_impuation(X_test):
     LO =push(X_test, axis=1)
     LOCF= np.where(np.isnan(LO), 0, LO) 
     zero= np.where(np.isnan(X_test), 0, X_test)
+    split=int(len(X_test)*0.2)
+    X_training, _ = X_test[:split,:,:], X_test[split:,:,:]
     means = []
     flatten= X_test.reshape(X_test.shape[0]*X_test.shape[1], X_test.shape[2])
     for i in range(flatten.shape[1]):
         means.append(np.nanmean(flatten[:,i]))
     mean_imputed =mean_fill(X_test, means)
-        
+    flatten= X_training.reshape(X_training.shape[0]*X_training.shape[1], X_training.shape[2])
+
     mice_impute = IterativeImputer()
+    MICE_ = mice_impute.fit(flatten)
     flatten= X_test.reshape(X_test.shape[0]*X_test.shape[1], X_test.shape[2])
-    MICE_ = mice_impute.fit_transform(flatten)
+
+    MICE_ = MICE_.transform(flatten)
+
     MICE=MICE_.reshape(X_test.shape[0], X_test.shape[1], X_test.shape[2])
     MICE =MICE.copy()
     return(LOCF, zero, mean_imputed, MICE)
@@ -233,4 +255,42 @@ def get_patient_level_MAE(imputation,observed, miss_indices_, name):
             mea= 0.0
         array_mea.append(mea)
     print(name, np.mean(array_mea),np.std(array_mea))
+
+
+def get_pecent_missing_samples(mask_, percent, percent_2, feat_measured_min, feat_measured_max):
+    max_= mask_.shape[1]*mask_.shape[2]
+    count=0
+    index = []
+    high= []
+    min_feat_measured = feat_measured_min*mask_.shape[2]
+    max_feat_measured = feat_measured_max*mask_.shape[2]
+    for i in mask_:
+        missing= ((max_-i.sum())/max_)
+        num_measurments_per_feature = i.sum(axis=0)
+        if ((missing>= percent) & (missing< percent_2)) :
+            index.append(count)
+        observed_columns= np.count_nonzero(num_measurments_per_feature)
+        missing_cols = mask_.shape[2]- observed_columns
+        if ((missing_cols>= min_feat_measured) & (missing_cols< max_feat_measured)) :
+             high.append(count)
+        count= count+1
+    return(index,high)
+
+    
+def get_sets_sample_missingness(data,interven,outcome, min_feat_miss_percent, max_feat_miss_percent):
+         mask=~np.isnan(data)*1
+         ids_sample, id_feat= get_pecent_missing_samples(mask, min_feat_miss_percent, max_feat_miss_percent, 0, 1)
+         interven = interven[ids_sample,]
+         data = data[ids_sample,]
+         label = outcome[ids_sample]
+         return(data,interven, label)
        
+def get_sets_feature_missingness(data,interven,outcome, min_feat_miss_percent, max_feat_miss_percent):
+
+         #Get data splits for each of the feature-wise missingness experiments        
+          mask=~np.isnan(data)*1
+          ids_sample, id_feat= get_pecent_missing_samples(mask, 0, 1, min_feat_miss_percent, max_feat_miss_percent)
+          interven = interven[id_feat,]
+          data = data[id_feat,]
+          label = outcome[id_feat]
+          return(data,interven, label)       
