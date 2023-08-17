@@ -13,10 +13,9 @@ import random as rn
 import pickle
 from new_networks_DA import observed_only_vae,IMM_vae
 from IGNITE_model import IGNITE
-from prep_inputs import create_masks, introduce_miss_patient
+from prep_inputs import create_masks, introduce_miss_patient,get_sets_sample_missingness,get_sets_feature_missingness
 import argparse
 import numpy as np
-import wandb
 os.environ["TF_DISABLE_SEGMENT_REDUCTION_OP_DETERMINISM_EXCEPTIONS"] = "True"
 os.environ['PYTHONHASHSEED'] = '1'
 os.environ['TF_DETERMINISTIC_OPS'] = '0'
@@ -27,7 +26,11 @@ np.random.seed(42)
 
 def main (args, X, conditions, outcomes):
     
-    # train_test_split
+    X,conditions,outcomes=\
+          get_sets_sample_missingness(X,conditions,outcomes, 0.25,0.75)  #miss ratio experiments, can use get_sets_feature_missingness for feature-wise missingness
+              
+    print(X.shape)
+    # train_test_split 
     sample_size= len(X)
     split_ratio=int(sample_size*0.8)
     X_training, X_test = X[:split_ratio,:,:], X[split_ratio:,:,:]
@@ -53,12 +56,17 @@ def main (args, X, conditions, outcomes):
     num_labels = conditions_training.shape[2]
     
     
+   
+    
+    
     # initialize inputs
     observed_only_vae_x = zero
     IMM_vae_x= IMM_input
     intervention=conditions_training
     
-    
+  
+
+                                   
     # pass inputs to model instances
     observed_only_vae_inst = observed_only_vae( time_steps=time_steps, dim=ts_feat, z_dim=args.shared_latent_dim, keep_prob=args.keep_prob,
                       conditional=args.conditional, enc_size=args.enc_size, dec_size= args.dec_size, l2scale= args.l2_scale)
@@ -66,7 +74,6 @@ def main (args, X, conditions, outcomes):
     IMM_vae_inst = IMM_vae(time_steps=time_steps, dim=ts_feat, z_dim=args.shared_latent_dim, keep_prob=args.keep_prob,
                       conditional=args.conditional,enc_size=args.enc_size, dec_size= args.dec_size, l2scale= args.l2_scale)
   
-    wandb.init(project="final_IGNITE", entity="baharmichal", sync_tensorboard=True,settings=dict(start_method='thread'), config = args)
     
     checkpoint_dir = "data/checkpoint/"
     if not os.path.exists(checkpoint_dir):
@@ -105,33 +112,33 @@ def main (args, X, conditions, outcomes):
 
 
 if __name__ == '__main__':  
-    exp_name = "FINAL_main_256_lr_new_05_30_condition_IMM"
+    exp_name = "25_75_feature"
 
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--batch_size', type=int, default=512, help='The batch size for training the model.')
-    parser.add_argument('--num_epochs', type=int, default=20, help='The number of epoches in training  IGNITE.')
+    parser.add_argument('--num_epochs', type=int, default=10, help='The number of epoches in training  IGNITE.')
     parser.add_argument('--shared_latent_dim', type=int, default=30, help='The dimension of latent space in training  IGNITE.')
     parser.add_argument('--IGNITE_lr', type=float, default=0.00005, help='The learning rate in training IGNITE.')
     parser.add_argument('--l2_scale', type=float, default=0.001, help='The regularization parameter in training IGNITE.')
-    parser.add_argument('--keep_prob', type=float, default=0.7, help='The dropout rate in training IGNITE.')
+    parser.add_argument('--keep_prob', type=float, default=0.5, help='The dropout rate in training IGNITE.')
     parser.add_argument('--enc_size', type=float, default=64,help="The size of the decoders used in IGNITE")
     parser.add_argument('--dec_size', type=float, default=64, help= "The size of the decoders used in IGNITE")
     parser.add_argument('--conditional', type=bool, default=True, help= "Use conditional variant for timeseries interventions")
     parser.add_argument('--experiment_name',  default=exp_name, help= "The name of the experiment")
-    parser.add_argument('--indicate_rate', type=float, default=0,help="The ratio of missingness indication for training")
+    parser.add_argument('--indicate_rate', type=float, default=0.1,help="The ratio of missingness indication for training")
 
     parser.add_argument('--miss_test', type=bool, default= False)
     parser.add_argument('--seed', type=int, default= 42)
-    parser.add_argument('--miss_test_ratio', type=float, default= 0.1)
+    parser.add_argument('--miss_test_ratio', type=float, default= 0.2)
 
     parser.add_argument('--alpha_re', type=float, default= 20)
     parser.add_argument('--alpha_kl', type=float, default=0.05)
-    parser.add_argument('--alpha_discrim', type=float, default=0)
+    parser.add_argument('--alpha_discrim', type=float, default=1)
     parser.add_argument('--alpha_semantic', type=float, default=1)
     parser.add_argument('--alpha_matching', type=float, default=0.05)
     parser.add_argument('--alpha_contrastive', type=float, default=0.001)
-    parser.add_argument('--alpha_MIT', type=float, default=0)
+    parser.add_argument('--alpha_MIT', type=float, default=1)
 
     args = parser.parse_args() 
     
