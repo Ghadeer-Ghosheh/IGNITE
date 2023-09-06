@@ -80,13 +80,16 @@ class observed_only_vae(object):
 
 
          x_encoded = tf.stack(z, axis=1)
+         print(x_encoded.shape)
          for t in range(self.time_steps):
             with tf.compat.v1.variable_scope('observed_only_VAE_Temporal_Attention', reuse=tf.compat.v1.AUTO_REUSE):
 
                 Beta_t = self.TemporalAttention( self.dec_state,self.cell_state_dec, x_encoded)
-                context_vector= tf.multiply( Beta_t[t], x_encoded[:, None, t, :])
+
+                context_vector= tf.multiply(Beta_t[:,None, t,:], x_encoded[:, None, t, :])
+
             if self.conditional:
-                context_vector = tf.concat([context_vector, conditions], axis=-1)
+                context_vector = tf.concat([context_vector, conditions[:, None, t, :]], axis=-1)
 
             with tf.compat.v1.variable_scope('observed_only_VAE_Decoder', regularizer=l2_regularizer(self.l2scale), reuse=tf.compat.v1.AUTO_REUSE):
                   tf2.random.set_seed(seed)
@@ -224,16 +227,18 @@ class IMM_vae(object):
 
          x_encoded = tf.stack(z, axis=1)
          for t in range(self.time_steps):
-            Beta_t = self.TemporalAttention( self.dec_state, self.cell_state_dec,x_encoded)
-            context_vector= tf.multiply( Beta_t[t], x_encoded[:, None, t, :])
-            if self.conditional:
-                context_vector = tf.concat([context_vector, conditions], axis=-1)
+                  Beta_t = self.TemporalAttention( self.dec_state,self.cell_state_dec, x_encoded)
 
-            with tf.compat.v1.variable_scope('IMM_VAE_Decoder', regularizer=l2_regularizer(self.l2scale), reuse=tf.compat.v1.AUTO_REUSE):
-                  tf2.random.set_seed(seed)
+                  context_vector= tf.multiply(Beta_t[:,None, t,:], x_encoded[:, None, t, :])
+
+                  if self.conditional:
+                     context_vector = tf.concat([context_vector, conditions[:, None, t, :]], axis=-1)
+
+                  with tf.compat.v1.variable_scope('IMM_VAE_Decoder', regularizer=l2_regularizer(self.l2scale), reuse=tf.compat.v1.AUTO_REUSE):
+                    tf2.random.set_seed(seed)
                   self.dec_state, _, self.cell_state_dec = self.cell_dec(context_vector, initial_state=[self.dec_state, self.cell_state_dec])
-            activation= tf.keras.layers.Activation("sigmoid")
-            self.c[t] = activation(tf.matmul(self.dec_state, self.w_h_dec) + self.b_h_dec)
+                  activation= tf.keras.layers.Activation("sigmoid")
+                  self.c[t] = activation(tf.matmul(self.dec_state, self.w_h_dec) + self.b_h_dec)
             
          self.decoded = tf.stack(self.c, axis=1)
          return self.decoded, sigma, mu, logsigma, z
