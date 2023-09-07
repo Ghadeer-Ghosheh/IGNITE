@@ -273,27 +273,27 @@ def main (args):
                 # train_acc = accuracy_score(y_train[:, 0], train_preds[:, 0])
                 #wandb.log({"train aucs": train_auc_macro,"train f1": train_f1, "train balanaced acc":train_balanced_accuracy,"epoch":epoch})
 
-                # prediction - test
+                  # prediction - test
                 cur_test_preds, pred= sess.run(model.prediction, {data: x_test, target: y_test, dropout_prob: 1, reg: rp})
-                test_preds = pred
-                y_pred_=np.argmax(test_preds, axis=1)
-                y_pred_ = (y_pred_ > 0.5) 
+                test_preds = pred[:,1]
+        
+                test_auc = roc_auc_score(y_test[:,1], test_preds)
+                test_auprc = average_precision_score(y_test[:,1], test_preds)
 
-                test_f1 = f1_score(np.argmax(y_test,axis = 1), y_pred_)
-                test_recall = recall_score(np.argmax(y_test,axis = 1), y_pred_)
-                test_precision_score = precision_score(np.argmax(y_test,axis = 1), y_pred_)
-                test_balanced_accuracy = balanced_accuracy_score(np.argmax(y_test,axis = 1), y_pred_)
-                specificty =recall_score(np.argmax(y_test,axis = 1), y_pred_,pos_label=0)
-
-                test_auc_macro = roc_auc_score(y_test, test_preds)
-                test_auprc_macro = average_precision_score(y_test, test_preds)
-
-                test_aucs_macro.append(test_auc_macro)    
-                test_auprcs_macro.append(test_auprc_macro)    
-
-                print("Test  Balanced Acc on epoch {} is {}".format(epoch, test_balanced_accuracy))
-                print("Test F1 AUC on epoch {} is {}".format(epoch, test_f1))
-                print("Test AUC on epoch {} is {}".format(epoch, test_auc_macro))
+                test_aucs_micro.append(test_auc)    
+                test_auprcs_micro.append(test_auprc)    
+                print("Test AUPRC on epoch {} is {}".format(epoch, test_auprc))
+                print("Test AUC on epoch {} is {}".format(epoch, test_auc))
+                
+                
+                
+                y_pred_ = (test_preds > 0.5) 
+                test_f1 = f1_score(y_test[:,1], y_pred_)
+                test_recall = recall_score(y_test[:,1], y_pred_)
+                test_precision_score = precision_score(y_test[:,1], y_pred_)
+                test_balanced_accuracy = balanced_accuracy_score(y_test[:,1], y_pred_)
+                specificty =recall_score(y_test[:,1], y_pred_,pos_label=0)
+                
                 #wandb.log({"epoch":epoch, "test aucs": test_auc_macro,"test auprc":test_auprc_macro,"test f1": test_f1, "test balanaced acc":test_balanced_accuracy, "test Recall": test_recall, "Test Precision": test_precision_score, "specificty": specificty})        
         
 
