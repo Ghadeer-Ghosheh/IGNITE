@@ -26,8 +26,8 @@ np.random.seed(42)
 
 def main (args, X, conditions, outcomes):
     
-    X,conditions,outcomes=\
-          get_sets_sample_missingness(X,conditions,outcomes, 0.25,0.75)  #miss ratio experiments, can use get_sets_feature_missingness for feature-wise missingness
+   # X,conditions,outcomes=\
+    #      get_sets_sample_missingness(X,conditions,outcomes, 0.25,0.75)  #miss ratio experiments, can use get_sets_feature_missingness for feature-wise missingness
               
     print(X.shape)
     # train_test_split 
@@ -134,10 +134,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--alpha_re', type=float, default= 20)
     parser.add_argument('--alpha_kl', type=float, default=0.05)
-    parser.add_argument('--alpha_discrim', type=float, default=1)
+    parser.add_argument('--alpha_discrim', type=float, default=0.5)
     parser.add_argument('--alpha_semantic', type=float, default=1)
     parser.add_argument('--alpha_matching', type=float, default=0.05)
-    parser.add_argument('--alpha_contrastive', type=float, default=0.001)
+    parser.add_argument('--alpha_contrastive', type=float, default=0.0001)
     parser.add_argument('--alpha_MIT', type=float, default=1)
 
     args = parser.parse_args() 
@@ -145,11 +145,11 @@ if __name__ == '__main__':
     
     # Load datasets
     data_path = 'extracts/'
-    with open(os.path.join(data_path, 'normalized_combined.pkl'), 'rb') as f:
+    with open(os.path.join(data_path, '.......pkl'), 'rb') as f: # file containing 3d tensor with missing values
         X = pickle.load(f)
-    with open(os.path.join(data_path, 'condition.pkl'), 'rb') as f:
+    with open(os.path.join(data_path, '......pkl'), 'rb') as f: # file containing conditions
         conditions = pickle.load(f)
-    with open(os.path.join(data_path, 'out_combined.pkl'), 'rb') as f:
+    with open(os.path.join(data_path, '.......pkl'), 'rb') as f: # file containing the outcome
         outcomes = pickle.load(f)
   
     main(args, X, conditions, outcomes)
