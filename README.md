@@ -31,7 +31,6 @@ In this work, we propose a novel hybrid deep-generative model for imputing perso
 
 -The miss_experiments.py file calculates the error from introducing the missingness in the test set after imputation
 
-- TheupdatedLSTM.py file trains and LSTM model for the downstream task.
 ## Environment
 
 To run this code repo, please download the requirements file and run the following command.
