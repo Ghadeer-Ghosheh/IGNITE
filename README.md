@@ -27,7 +27,7 @@ In this work, we propose a novel hybrid deep-generative model for imputing perso
 --> This function is called twice once on the test set with the MCAR-introduced missingness for the reconstruction task, and another time to generate imputations for the full datasets for the downstream task.
 
 
--The baselines.py file gets the results for both SAITS and BRITS models on the same dataset.
+-The baselines.py file gets the results for SAITS, Transformer and BRITS models on the same dataset.
 
 -The miss_experiments.py file calculates the error from introducing the missingness in the test set after imputation
 
