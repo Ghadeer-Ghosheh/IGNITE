@@ -29,30 +29,6 @@ def create_individualized_missingness_mask(mask):
     # stack all feature-specific patient masks tnto a 3d tensor
   personalized_mask_full = np.stack(personalized_mask_patient, axis=0)
   return(personalized_mask_full)
-def create_individualized_missingness_mask2(mask):
-  np.set_printoptions(suppress=False, precision= 9)
-  samples_len =mask.shape[0]
-  time_steps = mask.shape[1]
-  features = mask.shape[2]
-  
-  personalized_mask_full = np.empty(shape=[samples_len,time_steps,features])
-  personalized_mask_patient = []
-  personalized_mask_sample = np.ones(shape=[time_steps,features])
-  for patient_mask in mask:
-        num_measurments_per_feature = patient_mask.sum(axis=0)
-        # for each patient mask
-        non_miss_featue= sum(num_measurments_per_feature !=0)
-
-       
-        tf=((num_measurments_per_feature)/time_steps)
-     
-        idf = np.log(features/non_miss_featue)
-        if non_miss_featue == 0:
-            idf= 1
-        personalized_mask_patient.append(np.where(patient_mask == 0, tf*idf, patient_mask))
-    # stack all feature-specific patient masks tnto a 3d tensor
-  personalized_mask_full = np.stack(personalized_mask_patient, axis=0)
-  return(personalized_mask_full)
 
 def gen_input_noise(num_sample, T, noise_dim):
         return np.random.uniform(size=[num_sample, T, noise_dim])
