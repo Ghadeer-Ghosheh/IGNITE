@@ -41,4 +41,4 @@ $ conda create -n <environment-name> --file req.txt
 ## Citation
 
 
-If you found this code useful, please cite: ...... TO ADD
+If you found this code useful, please cite: Ghosheh, Ghadeer O., Jin Li, and Tingting Zhu. "IGNITE: Individualized GeNeration of Imputations in Time-series Electronic health records." arXiv preprint arXiv:2401.04402 (2024) [arXiv:2401.04402].
